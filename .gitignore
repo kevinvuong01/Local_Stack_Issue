@@ -1,0 +1,32 @@
+# Go Stuff
+cmd/__debug_bin
+
+test_secrets.yml
+test_ssm_keys.yml
+
+# IDE Stuff
+vendor
+launch.json
+.vscode
+debug
+.idea
+*.iml
+
+# Cucumber Stuff
+/cucumber*
+*Gemfile
+merged-Gemfile.lock
+.ruby-version
+
+# Misc
+bin
+api/generated
+
+# Mac Stuff
+.DS_Store
+test-results/
+test_ssm_keys.yml
+/.adr-dir
+
+# Statik
+api/generated/swaggerui/statik/statik.go
