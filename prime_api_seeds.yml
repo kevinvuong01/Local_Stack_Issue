@@ -1,0 +1,8 @@
+prime_apis:
+  - api_name: CoverageEligibilityRequest API
+    id: 1
+    enabled: true
+
+  - api_name: Coverage API
+    id: 2
+    enabled: true
