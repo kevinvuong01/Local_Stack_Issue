@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/spf13/viper"
-
 	av "github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
@@ -19,11 +18,13 @@ import (
 var (
 	client    *dynamodb.Client
 	tableName string
+	//DYNAMODB_ENDPOINT string
 )
 
 func init() {
+	//DYNAMODB_ENDPOINT = "http://janus-localstack:4566"
 	client, _ = NewDynamoDBClient()
-	tableName = "local-prime-integration-service-prime-apis"
+	tableName = "prime-apis"
 }
 
 type PrimeAPI struct {
@@ -34,7 +35,8 @@ type PrimeAPI struct {
 
 func NewDynamoDBClient() (*dynamodb.Client, error) {
 	DynamoDBEndpoint := viper.GetString("DYNAMODB_ENDPOINT")
-
+	//DynamoDBEndpoint := DYNAMODB_ENDPOINT
+	//log.Println(DynamoDBEndpoint)
 	var client *dynamodb.Client
 	/*cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
@@ -102,6 +104,26 @@ func seedThoseAPIs() error {
 		log.Printf("Unable to unmarshal prime API configuration: %s", err.Error())
 		return err
 	}
+	table, err := client.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
+		TableName: aws.String("prime-apis"),
+		//TableName:   &tableName,
+		BillingMode: types.BillingModePayPerRequest,
+		AttributeDefinitions: []types.AttributeDefinition{
+			{
+				AttributeName: aws.String("prime_api_id"),
+				AttributeType: types.ScalarAttributeTypeN,
+			},
+		},
+
+		KeySchema: []types.KeySchemaElement{
+			{
+				AttributeName: aws.String("prime_api_id"),
+				KeyType:       types.KeyTypeHash,
+			},
+		},
+	})
+	log.Println("Table: ", table)
+	log.Println("Error: ", err)
 
 	for _, api := range primeAPIs["prime_apis"] {
 		err := insertPrimeApiItem(&api)

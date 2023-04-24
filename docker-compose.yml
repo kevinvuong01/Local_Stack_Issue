@@ -26,8 +26,10 @@ services:
       local:
 
   janus-localstack:
-    image: docker-registry.janusplatform.io/janus-localstack:latest@sha256:e6d306a60d24ab56980b284428a97b5faf3b7f333423c57c285ce8c7a9d53fea
+    #image: docker-registry.janusplatform.io/janus-localstack:latest@sha256:e6d306a60d24ab56980b284428a97b5faf3b7f333423c57c285ce8c7a9d53fea
     #image: docker-registry.janusplatform.io/janus-localstack:latest@sha256:88d5657058e4e6b2980a02432ff20c5685e764bb2fbb4a92596408c87a0d55c9
+    image: docker-registry.janusplatform.io/janus-localstack:2.0
+    #image: localstack/localstack:2.0.2@sha256:2b4ec60261238bfc9573193380724ed4b9ee9fa0f39726275cd8feb48a254219
     ports:
       - "4566:4566"
       - "4569:4569"

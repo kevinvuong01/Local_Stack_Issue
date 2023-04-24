@@ -1,0 +1,19 @@
+format_version: 2
+stack_name: prime-integration-service
+resources_I_provision:
+  ecs_services:
+    - containers:
+        - container_name: main
+          memory: 1024
+          exposed_port: 8443
+          environment_variables:
+            - SERVER_HTTP_TLS_ENABLED: "true"
+            - DD_AGENT_HOST: "172.17.0.1"
+      desired_count: 2
+      # for session affinity across nodes
+      stickiness_duration_seconds: 1800
+
+
+resources_I_consume:
+  ecs_services:
+    - stack_name: authentication-service
