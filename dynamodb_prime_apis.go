@@ -8,24 +8,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
-	"strconv"
 )
 
 var (
-	client    *dynamodb.Client
-	tableName string
-	//DYNAMODB_ENDPOINT string
-)
-
-func init() {
-	//DYNAMODB_ENDPOINT = "http://janus-localstack:4566"
-	client, _ = NewDynamoDBClient()
 	tableName = "prime-apis"
-}
+)
 
 type PrimeAPI struct {
 	Id      int    `yaml:"id" json:"id" dynamodbav:"prime_api_id"`
@@ -34,61 +24,29 @@ type PrimeAPI struct {
 }
 
 func NewDynamoDBClient() (*dynamodb.Client, error) {
-	DynamoDBEndpoint := viper.GetString("DYNAMODB_ENDPOINT")
-	//DynamoDBEndpoint := DYNAMODB_ENDPOINT
-	//log.Println(DynamoDBEndpoint)
+	DynamoDBEndpoint := "http://localstack:4566"
+	log.Printf("Setting dynamo endpoint to  %s", DynamoDBEndpoint)
 	var client *dynamodb.Client
-	/*cfg, err := config.LoadDefaultConfig(context.Background())
-	if err != nil {
-		return nil, err
-	}*/
 
 	//Specifying AWS Region
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-west-2"))
 	if err != nil {
 		return nil, err
 	}
-	log.Println("cfg: ", cfg)
-	fmt.Println("in LOCAL mode")
 	client = dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {
 		o.EndpointResolver = dynamodb.EndpointResolverFromURL(DynamoDBEndpoint)
 	})
-
-	//Experiment (Error)
-	/*
-		sess, err := session.NewSession(&aws.Config{
-				Region: aws.String("us-west-2")},
-		)
-		client = dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {
-			o.EndpointResolver = dynamodb.EndpointResolverFromURL("https://test.us-west-2.amazonaws.com")
-		})*/
-	//client = dynamodb.New(sess, &aws.Config{Endpoint: aws.String("https://test.us-west-2.amazonaws.com")})
 	return client, nil
-}
-
-func AllPrimeAPIs(ctx context.Context) (*[]PrimeAPI, error) {
-	out, err := client.Scan(ctx, &dynamodb.ScanInput{
-		TableName:      &tableName,
-		ConsistentRead: aws.Bool(true),
-	},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var primeAPIS []PrimeAPI
-	err = av.UnmarshalListOfMaps(out.Items, &primeAPIS)
-	if err != nil {
-		return nil, err
-	}
-
-	return &primeAPIS, nil
 }
 
 // SeedPrimeAPIs inserts (upserts, really) these Prime APIs into DynamoDB
 // so we can toggle their status as needed
 func seedThoseAPIs() error {
+	client, err := NewDynamoDBClient()
+	if err != nil {
+		log.Printf("Error creating client: %s", err.Error())
+		return err
+	}
 	seedsYml := "prime_api_seeds.yml"
 
 	var primeAPIs = make(map[string][]PrimeAPI)
@@ -104,8 +62,8 @@ func seedThoseAPIs() error {
 		log.Printf("Unable to unmarshal prime API configuration: %s", err.Error())
 		return err
 	}
-	table, err := client.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
-		TableName: aws.String("prime-apis"),
+	_, err = client.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
+		TableName: aws.String(tableName),
 		//TableName:   &tableName,
 		BillingMode: types.BillingModePayPerRequest,
 		AttributeDefinitions: []types.AttributeDefinition{
@@ -122,11 +80,14 @@ func seedThoseAPIs() error {
 			},
 		},
 	})
-	log.Println("Table: ", table)
-	log.Println("Error: ", err)
+	if err != nil {
+		log.Fatalf("Got error calling CreateTable: %s", err)
+		return err
+	}
+	log.Printf("Created table %s", tableName)
 
 	for _, api := range primeAPIs["prime_apis"] {
-		err := insertPrimeApiItem(&api)
+		err := insertPrimeApiItem(&api, client)
 		if err != nil {
 			log.Printf("Unable to insert prime API configuration: %s", err.Error())
 			return err
@@ -136,7 +97,7 @@ func seedThoseAPIs() error {
 	return nil
 }
 
-func insertPrimeApiItem(primeAPI *PrimeAPI) error {
+func insertPrimeApiItem(primeAPI *PrimeAPI, client *dynamodb.Client) error {
 	marhsalledAPI, err := av.MarshalMap(primeAPI)
 	if err != nil {
 		return err
@@ -160,26 +121,5 @@ func insertPrimeApiItem(primeAPI *PrimeAPI) error {
 
 	fmt.Printf("Seeded PrimeAPI %d %s: (enabled %t)", primeAPI.Id, primeAPI.ApiName,
 		primeAPI.Enabled)
-	return nil
-}
-
-func SetEnabledTo(ctx context.Context, primeApiId int, enabled bool) error {
-
-	_, err := client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
-		TableName: &tableName,
-		Key: map[string]types.AttributeValue{
-			"prime_api_id": &types.AttributeValueMemberN{Value: strconv.Itoa(primeApiId)},
-		},
-		UpdateExpression: aws.String("set enabled = :newVal"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":newVal": &types.AttributeValueMemberBOOL{
-				Value: enabled,
-			},
-		},
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
