@@ -7,7 +7,7 @@ A small repo showing a dynamoDB issue we've seen when trying to upgrade from old
 
 The app spins up, creates the table, seeds the data. All is well.
 
-`docker-compose -f docker-compose_2.0_works.yml up --build`
+`docker-compose -f docker-compose_2.0_error.yml up --build`
 
 The app spins up, creates the table, localstack shows a 200
 
