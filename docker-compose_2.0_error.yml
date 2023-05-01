@@ -19,7 +19,8 @@ services:
       - AWS_REGION=us-west-2
 
   localstack:
-    image: localstack/localstack:2.0
+    #image: localstack/localstack:2.0
+    image: localstack/localstack:latest@sha256:2e4e6c1c4f19c1832059e64dfad731b627c51be42caa9402c2e3dd7dff686fbb
     ports:
       - "4566:4566"
     environment:

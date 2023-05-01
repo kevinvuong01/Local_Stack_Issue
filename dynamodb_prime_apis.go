@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
+	"time"
 )
 
 var (
@@ -86,13 +87,16 @@ func seedThoseAPIs() error {
 	}
 	log.Printf("Created table %s", tableName)
 
+	start := time.Now()
 	for _, api := range primeAPIs["prime_apis"] {
 		err := insertPrimeApiItem(&api, client)
+
 		if err != nil {
 			log.Printf("Unable to insert prime API configuration: %s", err.Error())
 			return err
 		}
 	}
+	log.Println("The table is ready in: ", time.Since(start).Seconds(), "seconds")
 
 	return nil
 }
@@ -115,6 +119,9 @@ func insertPrimeApiItem(primeAPI *PrimeAPI, client *dynamodb.Client) error {
 	log.Printf("ID Exists: %t, value: %v\n", id_exists, api_id)
 	api_name, name_exists := input.Item["prime_api_name"]
 	log.Printf("Name Exists: %t, value: %v\n", name_exists, api_name)
+	for err != nil {
+		_, err = client.PutItem(context.Background(), &input)
+	}
 	if err != nil {
 		return err
 	}
